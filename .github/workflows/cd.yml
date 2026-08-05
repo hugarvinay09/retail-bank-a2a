@@ -1,0 +1,65 @@
+name: cd
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Existing immutable image tag; blank builds current commit
+        required: false
+        type: string
+permissions:
+  id-token: write
+  contents: read
+concurrency:
+  group: production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    environment: production
+    runs-on: [self-hosted, linux, x64, bank-prod-vpc]
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - id: meta
+        shell: bash
+        env:
+          REQUESTED_TAG: ${{ inputs.image_tag }}
+        run: |
+          tag="${REQUESTED_TAG:-${GITHUB_SHA}}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+        if: ${{ inputs.image_tag == '' }}
+      - uses: docker/build-push-action@v6
+        if: ${{ inputs.image_tag == '' }}
+        with:
+          context: .
+          push: true
+          provenance: mode=max
+          sbom: true
+          tags: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Configure private EKS access
+        run: aws eks update-kubeconfig --name "${{ vars.EKS_CLUSTER_NAME }}" --region "${{ vars.AWS_REGION }}"
+      - name: Deploy atomically
+        run: |
+          helm upgrade --install retail-bank-a2a deploy/helm/retail-bank-a2a \
+            --namespace retail-bank-a2a \
+            --set image.repository="${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}" \
+            --set image.tag="${{ steps.meta.outputs.tag }}" \
+            --set serviceAccount.annotations.eks\.amazonaws\.com/role-arn="${{ vars.APP_ROLE_ARN }}" \
+            --set config.s3DocumentBucket="${{ vars.DOCUMENT_BUCKET }}" \
+            --set ingress.host="${{ vars.API_HOST }}" \
+            --set ingress.certificateArn="${{ vars.ACM_CERTIFICATE_ARN }}" \
+            --atomic --wait --timeout 10m
+      - name: Verify rollout and smoke test
+        run: |
+          kubectl -n retail-bank-a2a rollout status deployment/retail-bank-a2a --timeout=5m
+          kubectl -n retail-bank-a2a run smoke-${GITHUB_RUN_ID} --rm -i --restart=Never \
+            --image=curlimages/curl:8.13.0 -- \
+            curl --fail --silent http://retail-bank-a2a/health/ready

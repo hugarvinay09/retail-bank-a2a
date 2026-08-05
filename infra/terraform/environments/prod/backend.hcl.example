@@ -1,0 +1,6 @@
+bucket         = "your-terraform-state-bucket"
+key            = "retail-bank-a2a/prod/terraform.tfstate"
+region         = "ap-south-1"
+encrypt        = true
+use_lockfile   = true
+

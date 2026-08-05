@@ -1,0 +1,61 @@
+name: retail-bank-a2a
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: bank
+      POSTGRES_PASSWORD: bank
+      POSTGRES_DB: bank_agents
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bank -d bank_agents"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports: ["5432:5432"]
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports: ["6379:6379"]
+    volumes: ["redis-data:/data"]
+
+  mock-bank:
+    build:
+      context: .
+      target: mock
+    ports: ["8090:8090"]
+
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://bank:bank@postgres:5432/bank_agents
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    build: .
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://bank:bank@postgres:5432/bank_agents
+      REDIS_URL: redis://redis:6379/0
+      BANK_API_BASE_URL: http://mock-bank:8090
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+      mock-bank: { condition: service_started }
+    ports: ["8080:8080"]
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=64m"]
+    security_opt: ["no-new-privileges:true"]
+
+volumes:
+  postgres-data:
+  redis-data:

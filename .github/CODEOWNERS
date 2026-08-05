@@ -1,0 +1,8 @@
+* @your-org/ai-platform
+/src/retail_bank_agents/services/payments.py @your-org/payments @your-org/security
+/src/retail_bank_agents/security.py @your-org/identity @your-org/security
+/src/retail_bank_agents/agents/ @your-org/model-risk @your-org/compliance
+/evals/ @your-org/model-risk
+/infra/ @your-org/cloud-platform @your-org/security
+/deploy/ @your-org/cloud-platform @your-org/sre
+

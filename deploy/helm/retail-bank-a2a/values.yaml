@@ -1,0 +1,57 @@
+replicaCount: 3
+image:
+  repository: replace.dkr.ecr.ap-south-1.amazonaws.com/retail-bank-a2a
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+serviceAccount:
+  create: true
+  name: retail-bank-a2a
+  annotations: {}
+podAnnotations: {}
+config:
+  environment: prod
+  enableKnowledge: true
+  enableAccountReads: true
+  enablePaymentProposals: false
+  enablePaymentExecution: false
+  awsRegion: ap-south-1
+  otelExporterOtlpEndpoint: https://otel-collector.monitoring.svc:4317
+  openaiModel: gpt-5.6-terra
+  openaiReasoningEffort: low
+  openaiEmbeddingModel: text-embedding-3-large
+  cohereRerankModel: rerank-v3.5
+  pineconeIndex: retail-bank-knowledge
+  pineconeNamespace: approved-policies
+  s3DocumentBucket: replace-me
+  bankApiBaseUrl: https://bank-api.internal.example
+  jwtIssuer: https://cognito-idp.ap-south-1.amazonaws.com/replace-me
+  jwtAudience: retail-bank-a2a
+  jwtJwksUrl: https://cognito-idp.ap-south-1.amazonaws.com/replace-me/.well-known/jwks.json
+  maxPaymentAmount: "100000"
+externalSecret:
+  enabled: true
+  secretStoreName: aws-secrets-manager
+  remoteKey: /prod/retail-bank-a2a
+resources:
+  requests: { cpu: 500m, memory: 1Gi }
+  limits: { cpu: "2", memory: 2Gi }
+service:
+  type: ClusterIP
+  port: 80
+ingress:
+  enabled: true
+  className: alb
+  host: agent-api.bank.example
+  certificateArn: replace-me
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 65
+pdb:
+  minAvailable: 2
+serviceMonitor:
+  enabled: true
+networkPolicy:
+  enabled: true
+  vpcCidr: 10.42.0.0/16

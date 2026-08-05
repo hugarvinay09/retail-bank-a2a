@@ -1,0 +1,6 @@
+aws_region = "ap-south-1"
+github_org = "your-org"
+github_repo = "retail-bank-a2a"
+aurora_engine_version = "16.6" # confirm with: aws rds describe-db-engine-versions
+valkey_engine_version = "8.0"
+

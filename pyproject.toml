@@ -1,0 +1,93 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "retail-bank-a2a"
+version = "1.0.0"
+description = "Auditable retail-banking multi-agent platform on LangGraph and OpenAI Responses API"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Retail Bank AI Platform Team" }]
+dependencies = [
+  "alembic>=1.14,<2",
+  "asyncpg>=0.30,<1",
+  "boto3>=1.36,<2",
+  "cohere>=5.13,<6",
+  "fastapi>=0.115,<1",
+  "httpx[socks]>=0.28,<1",
+  "langgraph>=0.4,<2",
+  "openai>=1.75,<3",
+  "opentelemetry-api>=1.30,<2",
+  "opentelemetry-exporter-otlp>=1.30,<2",
+  "opentelemetry-instrumentation-fastapi>=0.51b0,<1",
+  "opentelemetry-sdk>=1.30,<2",
+  "pinecone>=6,<8",
+  "prometheus-client>=0.21,<1",
+  "pydantic>=2.10,<3",
+  "pydantic-settings>=2.7,<3",
+  "pymupdf>=1.25,<2",
+  "pyjwt[crypto]>=2.10,<3",
+  "redis>=5.2,<7",
+  "sqlalchemy[asyncio]>=2.0.36,<3",
+  "structlog>=24.4,<26",
+  "tenacity>=9,<10",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.14,<2",
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.25,<1",
+  "pytest-cov>=6,<7",
+  "respx>=0.22,<1",
+  "ruff>=0.9,<1",
+]
+
+[project.scripts]
+bank-agent-api = "retail_bank_agents.main:run"
+bank-agent-ingest = "retail_bank_agents.rag.ingestion:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/retail_bank_agents"]
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers --disable-warnings"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = ["integration: requires local infrastructure", "live: requires external provider credentials"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "S"]
+ignore = ["B008", "S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106"]
+"alembic/**/*.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["alembic"]
+
+[tool.coverage.run]
+branch = true
+source = ["retail_bank_agents"]
+omit = [
+  "*/api/*",
+  "*/main.py",
+  "*/providers/*",
+  "*/repositories/database.py",
+  "*/rag/ingestion.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

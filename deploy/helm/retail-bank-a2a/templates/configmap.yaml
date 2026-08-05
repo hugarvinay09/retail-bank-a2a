@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "retail-bank-a2a.fullname" . }}
+  labels:
+    {{- include "retail-bank-a2a.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.config.environment | quote }}
+  AUTH_DISABLED: "false"
+  ENABLE_KNOWLEDGE: {{ .Values.config.enableKnowledge | quote }}
+  ENABLE_ACCOUNT_READS: {{ .Values.config.enableAccountReads | quote }}
+  ENABLE_PAYMENT_PROPOSALS: {{ .Values.config.enablePaymentProposals | quote }}
+  ENABLE_PAYMENT_EXECUTION: {{ .Values.config.enablePaymentExecution | quote }}
+  AWS_REGION: {{ .Values.config.awsRegion | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.config.otelExporterOtlpEndpoint | quote }}
+  OPENAI_MODEL: {{ .Values.config.openaiModel | quote }}
+  OPENAI_REASONING_EFFORT: {{ .Values.config.openaiReasoningEffort | quote }}
+  OPENAI_EMBEDDING_MODEL: {{ .Values.config.openaiEmbeddingModel | quote }}
+  COHERE_RERANK_MODEL: {{ .Values.config.cohereRerankModel | quote }}
+  PINECONE_INDEX: {{ .Values.config.pineconeIndex | quote }}
+  PINECONE_NAMESPACE: {{ .Values.config.pineconeNamespace | quote }}
+  S3_DOCUMENT_BUCKET: {{ .Values.config.s3DocumentBucket | quote }}
+  BANK_API_BASE_URL: {{ .Values.config.bankApiBaseUrl | quote }}
+  JWT_ISSUER: {{ .Values.config.jwtIssuer | quote }}
+  JWT_AUDIENCE: {{ .Values.config.jwtAudience | quote }}
+  JWT_JWKS_URL: {{ .Values.config.jwtJwksUrl | quote }}
+  MAX_PAYMENT_AMOUNT: {{ .Values.config.maxPaymentAmount | quote }}

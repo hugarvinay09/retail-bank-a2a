@@ -18,7 +18,7 @@ jobs:
     runs-on: [self-hosted, linux, x64, bank-prod-vpc]
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
